@@ -6,13 +6,12 @@ Supports a diff mode comparing two files.
 """
 
 import argparse
-import sys
 import os
+import sys
 from typing import Any, Optional
 
-import tiktoken
 import requests
-
+import tiktoken
 
 # ---------------------------------------------------------------------------
 # Model definitions
@@ -300,19 +299,22 @@ def build_parser() -> argparse.ArgumentParser:
         description="Count tokens and estimate LLM API costs.",
     )
     parser.add_argument(
-        "--text", "-t",
+        "--text",
+        "-t",
         type=str,
         default=None,
         help="Inline text to count tokens for.",
     )
     parser.add_argument(
-        "--file", "-f",
+        "--file",
+        "-f",
         type=str,
         default=None,
         help="Path to a file whose content should be tokenized.",
     )
     parser.add_argument(
-        "--diff", "-d",
+        "--diff",
+        "-d",
         type=str,
         nargs=2,
         metavar=("FILE1", "FILE2"),
@@ -356,7 +358,10 @@ def get_input_text(args: argparse.Namespace) -> str:
     if stdin_text is not None:
         return stdin_text
 
-    print("Error: no input provided. Use --text, --file, or pipe data via stdin.", file=sys.stderr)
+    print(
+        "Error: no input provided. Use --text, --file, or pipe data via stdin.",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
