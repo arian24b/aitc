@@ -3,7 +3,7 @@ name = "aitc"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 authors = [
     {name = "Arian Omrani", email = "arian24b@gmail.com"}
 ]
@@ -34,8 +34,8 @@ Repository = "https://github.com/arian24b/aitc"
 Issues = "https://github.com/arian24b/aitc/issues"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [tool.semantic_release]
 commit_parser = "conventional"

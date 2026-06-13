@@ -8,7 +8,7 @@ Supports a diff mode comparing two files.
 import argparse
 import os
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import requests
 import tiktoken
@@ -79,7 +79,7 @@ _OPENROUTER_URL = "https://openrouter.ai/api/v1/models"
 _LIVE_TIMEOUT_SECONDS = 3
 
 
-def fetch_live_prices() -> Optional[dict[str, float]]:
+def fetch_live_prices() -> dict[str, float] | None:
     """Fetch live model pricing from the OpenRouter API.
 
     Returns:
@@ -90,7 +90,7 @@ def fetch_live_prices() -> Optional[dict[str, float]]:
         response = requests.get(_OPENROUTER_URL, timeout=_LIVE_TIMEOUT_SECONDS)
         response.raise_for_status()
         data = response.json()
-    except Exception:  # noqa: BLE001 — silent fallback per spec
+    except Exception:
         return None
 
     if not isinstance(data, dict):
@@ -160,11 +160,11 @@ def read_file(path: str) -> str:
     """
     if not os.path.isfile(path):
         raise FileNotFoundError(f"File not found: {path}")
-    with open(path, "r") as fh:
+    with open(path) as fh:
         return fh.read()
 
 
-def read_stdin() -> Optional[str]:
+def read_stdin() -> str | None:
     """Read all text from standard input (non-interactive / pipe).
 
     Returns:
@@ -180,7 +180,7 @@ def read_stdin() -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 
-def _price_label(prices_live: bool, live_prices: Optional[dict]) -> Optional[str]:
+def _price_label(prices_live: bool, live_prices: dict | None) -> str | None:
     """Build the bracketed price-source annotation line.
 
     Args:
@@ -199,7 +199,7 @@ def _price_label(prices_live: bool, live_prices: Optional[dict]) -> Optional[str
 
 def _get_prices(
     prices_live: bool,
-) -> tuple[dict[str, float], Optional[dict[str, float]]]:
+) -> tuple[dict[str, float], dict[str, float] | None]:
     """Resolve per-model prices.
 
     Args:
@@ -208,7 +208,7 @@ def _get_prices(
     Returns:
         Tuple of (price_per_1m_by_openrouter_id, raw_prices_dict_or_None).
     """
-    live_prices: Optional[dict[str, float]] = None
+    live_prices: dict[str, float] | None = None
     if prices_live:
         live_prices = fetch_live_prices()
     price_map: dict[str, float] = {}
