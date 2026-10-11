@@ -5,13 +5,13 @@ Counts tokens in text/files and estimates API cost across popular LLM models.
 Supports a diff mode comparing two files.
 """
 
-import argparse
 import os
 import sys
 from typing import Any
 
 import requests
 import tiktoken
+from cfui import App, Arg, Fail, ui
 
 # ---------------------------------------------------------------------------
 # Model definitions
@@ -228,18 +228,16 @@ def output_basic(
     """Print basic mode output (tokens + cost estimates)."""
     price_map, live_prices = _get_prices(prices_live)
 
-    print(f"Tokens: {format_number(token_count)}")
+    ui.out(f"Tokens: {format_number(token_count)}")
     label = _price_label(prices_live, live_prices)
     if label is not None:
-        print(label)
-    print()
-    print("Cost estimates (input tokens):")
-
-    for m in MODELS:
-        oid = str(m["openrouter_id"])
-        ppm = price_map[oid]
-        cost = (token_count / 1_000_000) * ppm
-        print(f"  {m['display_name']:<20} ${format_cost(cost)}")
+        ui.info(label)
+    ui.out()
+    rows = [
+        (m["display_name"], f"${format_cost((token_count / 1_000_000) * price_map[str(m['openrouter_id'])])}")
+        for m in MODELS
+    ]
+    ui.table(rows, ["Model (input cost)", "Cost"])
 
 
 def output_diff(
@@ -252,8 +250,7 @@ def output_diff(
         text1 = read_file(path1)
         text2 = read_file(path2)
     except FileNotFoundError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        sys.exit(1)
+        raise Fail(str(exc)) from None
 
     count1 = count_tokens(text1)
     count2 = count_tokens(text2)
@@ -263,119 +260,68 @@ def output_diff(
 
     price_map, live_prices = _get_prices(prices_live)
 
-    print(f"File 1: {path1:30s} → {format_number(count1):>8} tokens")
-    print(f"File 2: {path2:30s} → {format_number(count2):>8} tokens")
-    print()
-    print(f"Delta: {delta_sign}{format_number(delta)} tokens  ({delta_sign}{delta_pct:.1f}%)")
-    print()
+    ui.out(f"File 1: {path1:30s} → {format_number(count1):>8} tokens")
+    ui.out(f"File 2: {path2:30s} → {format_number(count2):>8} tokens")
+    ui.out(f"Delta:  {delta_sign}{format_number(delta)} tokens  ({delta_sign}{delta_pct:.1f}%)")
+    ui.out()
     label = _price_label(prices_live, live_prices)
     if label is not None:
-        print(label)
-        print()
-    print("Cost delta per model:")
-
+        ui.info(label)
+    rows = []
     for m in MODELS:
-        oid = str(m["openrouter_id"])
-        ppm = price_map[oid]
-        cost1 = (count1 / 1_000_000) * ppm
-        cost2 = (count2 / 1_000_000) * ppm
-        cost_delta = cost2 - cost1
-        delta_sign_cost = "+" if cost_delta >= 0 else ""
-        print(f"  {m['display_name']:<20} {delta_sign_cost}${format_cost(cost_delta)}")
+        ppm = price_map[str(m["openrouter_id"])]
+        cost_delta = (count2 / 1_000_000) * ppm - (count1 / 1_000_000) * ppm
+        rows.append((m["display_name"], f"{'+' if cost_delta >= 0 else ''}${format_cost(cost_delta)}"))
+    ui.table(rows, ["Model (cost delta)", "Delta"])
 
 
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
-
-def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser.
-
-    Returns:
-        The configured ArgumentParser instance.
-    """
-    parser = argparse.ArgumentParser(
-        description="Count tokens and estimate LLM API costs.",
-    )
-    parser.add_argument(
-        "--text",
-        "-t",
-        type=str,
-        default=None,
-        help="Inline text to count tokens for.",
-    )
-    parser.add_argument(
-        "--file",
-        "-f",
-        type=str,
-        default=None,
-        help="Path to a file whose content should be tokenized.",
-    )
-    parser.add_argument(
-        "--diff",
-        "-d",
-        type=str,
-        nargs=2,
-        metavar=("FILE1", "FILE2"),
-        default=None,
-        help="Diff mode: compare token counts of two files.",
-    )
-    parser.add_argument(
-        "--live-prices",
-        action="store_true",
-        default=False,
-        help="Fetch real-time pricing from OpenRouter API.",
-    )
-    return parser
+app = App(
+    "aitc",
+    repo="https://github.com/arian24b/aitc",
+    description="Count tokens and estimate LLM API costs.",
+    default="count",
+)
 
 
-def get_input_text(args: argparse.Namespace) -> str:
-    """Resolve the input text from the provided arguments or stdin.
-
-    Priority: --text > --file > stdin pipe.
-
-    Args:
-        args: Parsed command-line arguments.
-
-    Returns:
-        The input text string.
-
-    Raises:
-        SystemExit: If no input source is available.
-    """
+def get_input_text(args) -> str:
+    """Resolve the input text: --text > --file > stdin pipe > prompt (TTY)."""
     if args.text is not None:
         return args.text
-
     if args.file is not None:
         try:
             return read_file(args.file)
         except FileNotFoundError as exc:
-            print(f"Error: {exc}", file=sys.stderr)
-            sys.exit(1)
-
+            raise Fail(str(exc)) from None
     stdin_text = read_stdin()
     if stdin_text is not None:
         return stdin_text
+    return ui.need(None, "--text", "Text to count")
 
-    print(
-        "Error: no input provided. Use --text, --file, or pipe data via stdin.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
+
+@app.command(
+    "count",
+    "Count tokens in text, a file or stdin, and estimate cost",
+    args=[
+        Arg("-t", "--text", help="Inline text to count tokens for"),
+        Arg("-f", "--file", help="Path to a file to tokenize"),
+        Arg("-d", "--diff", nargs=2, metavar="FILE", help="Diff mode: compare token counts of two files"),
+        Arg("--live-prices", action="store_true", help="Fetch real-time pricing from OpenRouter"),
+    ],
+)
+def count(args) -> None:
+    if args.diff is not None:
+        output_diff(args.diff[0], args.diff[1], args.live_prices)
+    else:
+        output_basic(count_tokens(get_input_text(args)), args.live_prices)
 
 
 def main() -> None:
     """Main entry point."""
-    parser = build_parser()
-    args = parser.parse_args()
-
-    if args.diff is not None:
-        output_diff(args.diff[0], args.diff[1], args.live_prices)
-    else:
-        text = get_input_text(args)
-        token_count = count_tokens(text)
-        output_basic(token_count, args.live_prices)
+    app.main()
 
 
 if __name__ == "__main__":

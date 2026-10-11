@@ -93,3 +93,16 @@ uv build
 ## License
 
 MIT
+
+## Common commands
+
+Built with [cfui](https://github.com/arian24b/cfui), so every command shares the same look and flags:
+
+```bash
+aitc help [command]     # help
+aitc version            # version and git repo (also: aitc -v)
+aitc update [--check]   # self update
+aitc -q ...             # quiet: no banners/notes (or AITC_QUIET=1)
+```
+
+Missing required options are asked for interactively on a TTY; in pipes/CI they fail with `--flag is required`.
