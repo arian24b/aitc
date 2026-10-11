@@ -1,108 +1,66 @@
 # aitc
 
-**AITC** — AI Token Counter. A CLI tool for counting tokens in text/files and estimating API costs across popular LLM models. Supports a diff mode comparing two files.
+[فارسی](README.fa.md)
 
-## Features
+AI Token Counter. Counts the tokens in text, a file, or piped input and estimates what that input costs on popular LLM APIs. It can also compare two files.
 
-- Count tokens in inline text, files, or piped stdin
-- Estimate API costs for GPT-4o, GPT-4o mini, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 1.5 Pro, and Gemini 1.5 Flash
-- Live pricing via OpenRouter API (`--live-prices`)
-- Diff mode to compare token counts between two files (`--diff`)
+## Install
 
-## Installation
-
-### Via pip
+Python 3.12 to 3.15.
 
 ```bash
-pip install aitc
+uv tool install aitc      # or: pipx install aitc, pip install aitc
 ```
 
-### Via uv
-
-```bash
-uv tool install aitc
-```
-
-### From source
-
-```bash
-# Clone the repository
-git clone https://github.com/arian24b/aitc.git
-cd aitc
-
-# Sync dependencies with uv
-uv sync
-
-# Run directly
-uv run aitc --text "Hello, world!"
-
-# Or install in development mode
-uv tool install -e .
-```
+From a clone: `uv sync && uv run aitc --text "Hello"`.
 
 ## Usage
 
-### Count tokens from inline text
+`aitc` has one command, `count`, and it runs by default, so `aitc --text ...` and `aitc count --text ...` are the same.
 
 ```bash
-aitc --text "Your text here"
+aitc --text "Your text here"           # inline text
+aitc --file README.md                  # a file
+echo "Your text here" | aitc           # stdin
+aitc --diff old.txt new.txt            # token and cost difference between two files
+aitc --text "Hello" --live-prices      # current prices from OpenRouter
+aitc                                   # in a terminal with no input: asks for the text
 ```
 
-### Count tokens from a file
+Options of `count`:
+
+| Option | Meaning |
+|---|---|
+| `-t`, `--text TEXT` | text to count |
+| `-f`, `--file FILE` | file to count |
+| `-d`, `--diff FILE FILE` | compare two files |
+| `--live-prices` | fetch prices from OpenRouter instead of the built-in table |
+
+Input is taken in this order: `--text`, then `--file`, then stdin. Costs are for input tokens, in USD per model: GPT-4o, GPT-4o mini, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 1.5 Pro, Gemini 1.5 Flash. Tokens are counted with the `cl100k_base` encoding, so counts for other model families are estimates.
+
+## Common commands
+
+Built on [cfuicli](https://github.com/arian24b/cfui), so it looks and behaves like the other tools in this family.
 
 ```bash
-aitc --file README.md
+aitc help [command]     # help; -h works on any command
+aitc version            # version and git repository (also: -v)
+aitc update [--check]   # update the tool itself; --check only compares versions
+aitc -q ...             # quiet: no banner or notes (or AITC_QUIET=1)
 ```
 
-### Pipe text via stdin
-
-```bash
-echo "Your text here" | aitc
-cat somefile.txt | aitc
-```
-
-### Compare two files (diff mode)
-
-```bash
-aitc --diff file1.txt file2.txt
-```
-
-### Fetch live pricing
-
-```bash
-aitc --text "Hello" --live-prices
-```
+- A missing required option is asked for when you run the tool in a terminal. In a pipe or in CI it stops with `--flag is required. Pass --flag <value> or run interactively.` (exit code 2).
+- Errors appear in a red box on stderr with a non-zero exit code. Ctrl-C exits with 130.
+- Color is used only on a terminal. `NO_COLOR=1` turns it off.
 
 ## Development
 
 ```bash
-# Clone
-git clone https://github.com/arian24b/aitc.git
-cd aitc
-
-# Set up environment with uv
 uv sync
-
-# Run linting
-uv run ruff check .
-
-# Build
+uv run ruff check . && uv run ruff format --check .
 uv build
 ```
 
 ## License
 
 MIT
-
-## Common commands
-
-Built with [cfui](https://github.com/arian24b/cfui), so every command shares the same look and flags:
-
-```bash
-aitc help [command]     # help
-aitc version            # version and git repo (also: aitc -v)
-aitc update [--check]   # self update
-aitc -q ...             # quiet: no banners/notes (or AITC_QUIET=1)
-```
-
-Missing required options are asked for interactively on a TTY; in pipes/CI they fail with `--flag is required`.
