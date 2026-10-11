@@ -21,13 +21,10 @@ classifiers = [
 ]
 keywords = ["throne", "cli", "installer", "hotspot", "proxy"]
 dependencies = [
-    "cfuicli>=0.2.0",
+    "cfuicli>=1.0.0",
     "requests>=2.34.2",
     "tiktoken>=0.13.0",
 ]
-
-[tool.uv.sources]
-cfuicli = { path = "../cfui", editable = true }  # ponytail: drop once cfui is on PyPI
 
 [project.scripts]
 aitc = "tokencount:main"
