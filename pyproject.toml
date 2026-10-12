@@ -3,7 +3,7 @@ name = "aitc"
 version = "1.0.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [
     {name = "Arian Omrani", email = "arian24b@gmail.com"}
 ]
@@ -13,14 +13,14 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 keywords = ["throne", "cli", "installer", "hotspot", "proxy"]
 dependencies = [
+    "cfuicli>=1.0.0",
     "requests>=2.34.2",
     "tiktoken>=0.13.0",
 ]
