@@ -13,7 +13,7 @@ AI Token Counter. Counts the tokens in text, a file, or piped input and estimate
 
 ## How it works
 
-`aitc` encodes the input with [tiktoken](https://github.com/openai/tiktoken) using `cl100k_base`, then multiplies the count by a per-million-token input price for each model. The built-in prices are constants in `tokencount.py`. With `--live-prices` it requests `https://openrouter.ai/api/v1/models` (3 second timeout) and uses the `prompt` price of each matching model; the output says whether prices were live or the fallback. Nothing else is sent over the network.
+`aitc` encodes the input with [tiktoken](https://github.com/openai/tiktoken) using `cl100k_base`, then multiplies the count by a per-million-token input price for each model. The built-in prices are constants in `tokencount.py`. With `--live-prices` it requests `https://openrouter.ai/api/v1/models` (3 second timeout) and uses the `prompt` price of each matching model; the output says whether prices were live or the fallback. The first run also lets tiktoken download and cache the `cl100k_base` vocabulary; your input text is never sent anywhere.
 
 ## Install
 
